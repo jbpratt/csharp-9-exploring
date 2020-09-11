@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 
 do
@@ -28,26 +30,7 @@ do
                     if (result.MessageType == WebSocketMessageType.Close) break;
 
                     ms.Seek(0, SeekOrigin.Begin);
-                    using (var reader = new StreamReader(ms, Encoding.UTF8))
-                    {
-                        string data = await reader.ReadToEndAsync();
-                        var received = data.Split();
-                        var msg = string.Join(" ", received.Skip(1));
-                        switch (received[0])
-                        {
-                            case "MSG":
-                                Console.WriteLine(msg);
-                                break;
-                            case "NAMES":
-                            case "JOIN":
-                            case "QUIT":
-                            case "VIEWERSTATE":
-                                break;
-                            default:
-                                Console.WriteLine("wat");
-                                break;
-                        }
-                    }
+                    handleMessage(ms);
                 }
             } while (true);
         }
@@ -57,3 +40,41 @@ do
         }
     }
 } while (true);
+
+async void handleMessage(MemoryStream ms)
+{
+    using (var reader = new StreamReader(ms, Encoding.UTF8))
+    {
+        string data = await reader.ReadToEndAsync();
+        var received = data.Split();
+        var msg = string.Join(" ", received.Skip(1));
+        switch (received[0])
+        {
+            case "MSG":
+                var m = Message.Deserialize(msg);
+                Console.WriteLine($"{m.nick}: {m.data}");
+                break;
+            case "NAMES":
+            case "JOIN":
+            case "QUIT":
+            case "VIEWERSTATE":
+                break;
+            default:
+                Console.WriteLine("wat");
+                break;
+        }
+    }
+}
+
+class Message
+{
+    public string nick { get; set; }
+    public string[] features { get; set; }
+    public long timestamp { get; set; }
+    public string data { get; set; }
+
+    public static Message Deserialize(string json)
+    {
+        return JsonSerializer.Deserialize<Message>(json, null);
+    }
+}
