@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading;
 
 do
@@ -73,8 +71,5 @@ class Message
     public long timestamp { get; set; }
     public string data { get; set; }
 
-    public static Message Deserialize(string json)
-    {
-        return JsonSerializer.Deserialize<Message>(json, null);
-    }
+    public static Message Deserialize(string json) => JsonSerializer.Deserialize<Message>(json, null);
 }
